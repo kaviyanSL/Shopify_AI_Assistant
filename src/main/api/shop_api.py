@@ -9,14 +9,12 @@ blueprint = Blueprint('product_eval', __name__)
 
 @blueprint.route("/api/v1/product_recommender/", methods=['POST'])
 def product_recommender():
-    model= DeepSeekService()
-    data_class = ShopDataCallingService()
-    
-
     request_api = request.get_json()
     prompt = request_api.get('prompt')
     product_category = prompt.get('category')
-    product_category = model.ai_response(prompt,data_class.calling_data(product_category))
+    data_class = ShopDataCallingService(product_category)
+    model= DeepSeekService(prompt, data_class.calling_data()) 
+    product_category = model.ai_response()
 
     try:
         return jsonify({"response": product_category}), 200
