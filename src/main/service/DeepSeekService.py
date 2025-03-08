@@ -55,8 +55,8 @@ class DeepSeekService:
                             logging.debug(f"Error decoding JSON: {e}")
 
             finally:
-                gc = GarbageCollectorServicec()
-                gc.garbage_collecting((response))
+                gc = GarbageCollectorServicec(response)
+                gc.garbage_collecting()
 
             return final_answer.replace("<think>", "").replace("</think>", "")
 

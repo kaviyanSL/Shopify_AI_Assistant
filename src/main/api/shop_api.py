@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 import logging
 import os
-from src.main.service.DeepSeekService import DeepSeekService
 from src.main.service.ShopDataCallingService import ShopDataCallingService
+from src.main.service.DeepSeekService import DeepSeekService
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 blueprint = Blueprint('product_eval', __name__)
@@ -11,12 +11,13 @@ blueprint = Blueprint('product_eval', __name__)
 def product_recommender():
     request_api = request.get_json()
     prompt = request_api.get('prompt')
-    product_category = prompt.get('category')
+    product_category = request_api.get('category')
     data_class = ShopDataCallingService(product_category)
     model= DeepSeekService(prompt, data_class.calling_data()) 
     product_category = model.ai_response()
 
     try:
+        logging.info("response is compeleted")
         return jsonify({"response": product_category}), 200
 
 

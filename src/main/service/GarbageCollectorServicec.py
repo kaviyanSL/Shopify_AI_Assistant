@@ -8,7 +8,7 @@ from typing import List, Tuple
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class GarbageCollectorServicec:
-    def __init__(self,data:Tuple):
+    def __init__(self,*data:Tuple):
         self.data = data
 
     def garbage_collecting(self):
