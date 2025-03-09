@@ -29,8 +29,9 @@ class DeepSeekService:
               If a matching product is found, return the final response and then provide allproducts and the theirs details in JSON format.
               Do not include any reasoning, explanations, or unnecessary details. 
               ONLY return the final response in short, concise language and the corresponding product details if a match is found
-              and remmeber that if your response must be in the same language as promt language so translate wherever is needed.
-              remmeber that show the product that match as many as our product if there are any matches.
+              and remmeber that if your response must be in the same language as promt language so translate wherever is needed,translatation is very important.
+              remmeber that show the product that match as many as our product if there are any matches. remmber if all the keys match with specific
+              product just show the product but if the main category matches but others don't, give the best next options.
               """
     }
 
