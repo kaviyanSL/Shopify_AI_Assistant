@@ -19,21 +19,22 @@ class DeepSeekService:
         datasets_json = json.dumps(self.datasets)
 
         data = {
-            "model": "deepseek-r1:14B",
-            "prompt": f"This is my customer request: {self.prompt}. And this is the list of my dataset JSON: {datasets_json}. " +
-              """You have to make a response about what product is suitable for my customer based on my dataset. 
-              Remember that the product must be in my dataset's category of products. If the product that the 
-              customer is looking for does not match with my shop's products, respond with:
-              "The product you are looking for is not listed as one of our current products."
-              and donot show any json response from our current products.
-              If a matching product is found, return the final response and then provide allproducts and the theirs details in JSON format.
-              Do not include any reasoning, explanations, or unnecessary details. 
-              ONLY return the final response in short, concise language and the corresponding product details if a match is found
-              and remmeber that if your response must be in the same language as promt language so translate wherever is needed,translatation is very important.
-              remmeber that show the product that match as many as our product if there are any matches. remmber if all the keys match with specific
-              product just show the product but if the main category matches but others don't, give the best next options.
-              """
-    }
+                "model": "deepseek-r1:14B",
+                "prompt": f"""
+                Customer Request: {self.prompt}  
+                Dataset JSON: {datasets_json}  
+
+                Task:  
+                - Identify and recommend products from the dataset that match the customer's request.  
+                - If no exact match exists, suggest the best alternatives within the same category.  
+                - If no suitable product is found, respond with:  
+                "The product you are looking for is not listed as one of our current products."  
+                - Do **not** include any JSON response if no product matches.  
+                - Output **only** the final response in a short, concise format, followed by matching products in JSON format.  
+                - Maintain the same language as the prompt (translate if necessary).  
+                """,
+            }
+
 
 
         response = requests.post(url, json=data, stream=True)
