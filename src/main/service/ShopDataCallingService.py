@@ -49,12 +49,10 @@ class ShopDataCallingService:
     
     def saving_shop_data_to_db(self, product_json):
         data = product_json
-        product_data_list = []  # List to store product data dictionaries
-        variant_data_list = []  # List to store variant data dictionaries
+        product_data_list = []  
+        variant_data_list = []  
 
-        # Loop through each product and create a dictionary for each one
         for product in data['products']:
-            # Create product data dictionary
             product_data = {
                 'id': product['id'],
                 'title': product['title'],
@@ -68,12 +66,9 @@ class ShopDataCallingService:
                 'image_url': product['image']['src']  
             }
             
-            # Append the product data to the list
             product_data_list.append(product_data)
             
-            # Loop through the variants of each product
             for variant in product['variants']:
-                # Create variant data dictionary
                 variant_data = {
                     'id': variant['id'],
                     'product_id': product['id'],  
