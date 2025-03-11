@@ -52,7 +52,7 @@ class ShopDataCallingService:
         product_data_list = []  
         variant_data_list = []  
 
-        for product in data['products']:
+        for product in data.json()['products']:
             product_data = {
                 'id': product['id'],
                 'title': product['title'],
@@ -68,7 +68,7 @@ class ShopDataCallingService:
             
             product_data_list.append(product_data)
             
-            for variant in product['variants']:
+            for variant in product.json()['variants']:
                 variant_data = {
                     'id': variant['id'],
                     'product_id': product['id'],  
