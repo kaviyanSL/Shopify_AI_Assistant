@@ -1,5 +1,5 @@
 CREATE TABLE products (
-    id BIGINT auto_increment PRIMARY KEY,
+    id BIGINT  PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     vendor VARCHAR(100),
@@ -7,11 +7,12 @@ CREATE TABLE products (
     tags VARCHAR(255),
     status ENUM('active', 'archived', 'draft') NOT NULL,
     created_at DATETIME NOT NULL,
-    updated_at DATETIME NOT NULL
+    updated_at DATETIME NOT null,
+    image_url TEXT
 ) ;
 
 CREATE TABLE variants (
-    id BIGINT auto_increment PRIMARY KEY,
+    id BIGINT  PRIMARY KEY,
     product_id BIGINT,
     title VARCHAR(255),
     price DECIMAL(10,2) NOT NULL,
@@ -36,6 +37,3 @@ CREATE TABLE images (
     src TEXT NOT NULL,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 ) ;
-
-
-

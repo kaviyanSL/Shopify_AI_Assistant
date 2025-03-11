@@ -39,14 +39,12 @@ def fetch_all_product_from_store():
                 }
         product = requests.get(url, headers=headers)
 
-        if product.status_code == 200:
-            ShopDataCalling = ShopDataCallingService()
-            ShopDataCalling.saving_shop_data_to_db(product)
-        else:
-            print(f"Error: {product.status_code}, {product.text}")  
-
+        
+        ShopDataCalling = ShopDataCallingService()
+        ShopDataCalling.saving_shop_data_to_db(product)
+          
         logging.info("response is compeleted")
-        return jsonify({"all data already fetched"}), 200
+        return jsonify({"message":"all data already fetched"}), 200
 
 
     except Exception as e:
