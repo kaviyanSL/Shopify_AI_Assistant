@@ -1,5 +1,5 @@
 CREATE TABLE products (
-    id BIGINT PRIMARY KEY,
+    id BIGINT auto_increment PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     vendor VARCHAR(100),
@@ -11,7 +11,7 @@ CREATE TABLE products (
 ) ;
 
 CREATE TABLE variants (
-    id BIGINT PRIMARY KEY,
+    id BIGINT auto_increment PRIMARY KEY,
     product_id BIGINT,
     title VARCHAR(255),
     price DECIMAL(10,2) NOT NULL,
@@ -31,8 +31,11 @@ CREATE TABLE options (
 ) ;
 
 CREATE TABLE images (
-    id BIGINT PRIMARY KEY,
+    id BIGINT auto_increment PRIMARY KEY,
     product_id BIGINT,
     src TEXT NOT NULL,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 ) ;
+
+
+
