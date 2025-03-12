@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import logging
 from src.main.repository.ProductRepository import ProductRepository
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+from src.main.service.SemanticSearchService import SemanticSearchService
 
 
 load_dotenv()
@@ -12,6 +13,7 @@ load_dotenv()
 class ShopDataCallingService:
     def __init__(self):
         self.ProductRepository = ProductRepository()
+        self.SemanticSearchService = SemanticSearchService()
     
     def calling_data(self,product_category):
         try:
@@ -63,7 +65,8 @@ class ShopDataCallingService:
                 'status': product['status'],
                 'created_at': product['created_at'],
                 'updated_at': product['updated_at'],
-                'image_url': product['image']['src']  
+                'image_url': product['image']['src'] ,
+                'type': product['product_type']
             }
             
             product_data_list.append(product_data)
@@ -77,12 +80,15 @@ class ShopDataCallingService:
                     'inventory_quantity': variant['inventory_quantity'],
                     'sku': variant['sku'],
                     'created_at': variant['created_at'],
-                    'updated_at': variant['updated_at']
+                    'updated_at': variant['updated_at'],
+                    'options':variant['option1'] 
                 }
                 
                 
                 variant_data_list.append(variant_data)
-        
+
+        semattinc_search_results = self.SemanticSearchService.embeded_product((product_data_list,variant_data_list))
+
         self.ProductRepository.saving_product_data(product_data_list)
         
         self.ProductRepository.saving_varient_data(variant_data_list)
