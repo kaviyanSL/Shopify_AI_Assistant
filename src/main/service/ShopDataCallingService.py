@@ -87,7 +87,12 @@ class ShopDataCallingService:
                 
                 variant_data_list.append(variant_data)
 
-        semattinc_search_results = self.SemanticSearchService.embeded_product((product_data_list,variant_data_list))
+        semattinc_search_model,product_variant_ids = self.SemanticSearchService.embeded_product((
+                                                            product_data_list,variant_data_list))
+        
+        self.ProductRepository.saving_semantic_searching_model(semattinc_search_model)
+
+        self.ProductRepository.saving_product_variant_ids(product_variant_ids)
 
         self.ProductRepository.saving_product_data(product_data_list)
         

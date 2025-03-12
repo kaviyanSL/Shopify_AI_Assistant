@@ -37,4 +37,5 @@ class SemanticSearchService:
 
         product_variant_ids = list(enumerate((product['id'], variant['id']) for product, variant in zip(filtered_products, filtered_variants)))
 
-        return index, product_variant_ids
+        index_binary = faiss.serialize_index(index)
+        return index_binary, product_variant_ids

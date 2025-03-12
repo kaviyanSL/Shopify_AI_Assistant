@@ -3,6 +3,7 @@ import os
 import sqlalchemy as sa
 from sqlalchemy import create_engine, Table, MetaData
 import logging
+import json
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -30,4 +31,31 @@ class ProductRepository:
             with conn.begin():
                 stmt = sa.insert(variants)
                 conn.execute(stmt, varients_data_list)  
-                logging.debug("Varients saved successfully!") 
+                logging.debug("Varients saved successfully!")
+
+    def saving_semantic_searching_model(self,model):
+        semantic_model = Table('semantic_model', self.metadata, autoload_with=self.engine)
+
+        with self.engine.connect() as conn:
+            with conn.begin():
+                stmt = sa.insert(semantic_model).values(
+                    model=model
+                    )
+                conn.execute(stmt)  
+                logging.debug("Semantic model saved successfully!")
+
+    def saving_product_variant_ids(self, list_of_product_variant_ids):
+        product_variant_ids = Table('product_variant_ids', self.metadata, autoload_with=self.engine)
+
+        with self.engine.connect() as conn:
+            with conn.begin():
+                for idx, product_variant in list_of_product_variant_ids:
+                    stmt = sa.insert(product_variant_ids).values(
+                        id=idx,  
+                        product_variant_ids=json.dumps(product_variant),  
+                    )
+                    conn.execute(stmt)  
+                    
+                    logging.debug(f"Product variant ID {idx} saved successfully!")
+
+
