@@ -64,5 +64,64 @@ class DeepSeekService:
 
         else:
             return f"Request failed with status code: {response.status_code}"
+        
+
+    def deep_seek_response_V2(self, prompt, products, variants):
+        url = os.getenv("DEEPSEEK_URL_LOCAL")
+
+        product_descriptions = [
+            f"{product['title']} - {product['type']}, {', '.join(variant['options'])}, ${variant['price']}, "
+            f"{variant['inventory_quantity']}, {product['status']}, {', '.join(product['tags'] if product['tags'] else [])}"
+            for product, variant in zip(products, variants)
+        ]
+
+        data = {
+            "model": "deepseek-r1:14B",
+            "prompt": f"""
+            Customer Request: {prompt}  
+            Products: {product_descriptions}  
+
+            Task:  
+            - Identify and recommend products from the dataset that match the customer's request.  
+            - If no exact match exists, suggest the best alternatives within the same category.  
+            - If no suitable product is found, respond with:  
+            "The product you are looking for is not listed as one of our current products."  
+            - Do **not** include any JSON response if no product matches.  
+            - Output **only** the final response in a short, concise format, followed by matching products in JSON format.  
+            - Maintain the same language as the prompt (translate if necessary).  
+            """,
+        }
+
+        response = requests.post(url, json=data, stream=True)
+
+        if response.status_code == 200:
+            final_answer = ""
+
+            try:
+                for line in response.iter_lines():
+                    if line:
+                        try:
+                            response_data = json.loads(line.decode('utf-8'))
+
+                            if "response" in response_data:
+                                final_answer += response_data["response"]
+
+                            if response_data.get("done", False):
+                                break
+                        except json.JSONDecodeError as e:
+                            logging.debug(f"Error decoding JSON: {e}")
+
+            finally:
+                gc = GarbageCollectorServicec(response)
+                gc.garbage_collecting()
+
+            return final_answer.replace("<think>", "").replace("</think>", "")
+
+        else:
+            return f"Request failed with status code: {response.status_code}"
+        
+
+    def __del__(self):
+        logging.debug("DeepSeekService object deleted")
 
 

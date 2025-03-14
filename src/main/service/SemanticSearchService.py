@@ -3,12 +3,14 @@ import faiss
 import numpy as np
 from typing import Tuple, List, Dict
 import logging
+from src.main.repository.ProductRepository import ProductRepository
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class SemanticSearchService:
     def __init__(self):
         self.model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+        self.semantic_model_repo = ProductRepository()
 
     def embeded_product(self, product_list: Tuple[List[Dict], List[Dict]]):
         products, variants = product_list
@@ -39,3 +41,10 @@ class SemanticSearchService:
 
         index_binary = faiss.serialize_index(index)
         return index_binary, product_variant_ids
+    
+    def semantic_search_result(self,prompt_message:str):
+        model = self.semantic_model_repo.call_semantic_search_model()
+        k = 5
+        query_embedding = np.array([self.model.encode(prompt_message)])
+        distance,index = model.search(query_embedding, k) 
+        return distance,index 

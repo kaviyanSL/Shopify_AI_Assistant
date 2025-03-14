@@ -5,6 +5,8 @@ import os
 from src.main.service.ShopDataCallingService import ShopDataCallingService
 from src.main.service.DeepSeekService import DeepSeekService
 from src.main.common.ShopifyGraphQLClient import ShopifyGraphQLClient
+from src.main.service.SemanticSearchService import SemanticSearchService
+from src.main.repository.ProductRepository import ProductRepository
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -68,6 +70,37 @@ def fetch_all_product_from_store_graphQL():
           
         logging.info("response is compeleted")
         return jsonify({"message":"all data already fetched"}), 200
+
+
+    except requests.exceptions.RequestException as e:
+        logging.error("Error in API request", exc_info=True)
+        return jsonify({"error": "API request failed", "details": str(e)}), 500
+    except Exception as e:
+        logging.error("Unexpected error occurred", exc_info=True)
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+    
+@blueprint.route("/api/v1/search_results_recommender_using_semantic/", methods=['POST'])
+def search_results_recommender_using_semantic():
+    try:
+        request_api = request.get_json()
+        prompt = request_api.get('prompt')
+        semantinc_model = SemanticSearchService()
+        distance,index = semantinc_model.semantic_search_result(prompt)
+        logging.info("semantic_search_result is compeleted")
+        repo = ProductRepository()
+        product_variant_ids = repo.product_variant_ids_call(index)
+        logging.info("product_variant_ids_call is compeleted")
+        product_ids = [i[0] for i in product_variant_ids]
+        variants_ids = [i[1] for i in product_variant_ids]
+        prosuct_data = repo.call_products(product_ids)
+        variant_data = repo.call_variants(variants_ids)
+        logging.info("call_products and call_variants is compeleted")
+
+        deep_seek_model = DeepSeekService()
+        ai_response = deep_seek_model.deep_seek_response_V2(prompt,prosuct_data,variant_data)
+          
+        logging.info("response is compeleted")
+        return jsonify({"message":f"{ai_response}"}), 200
 
 
     except requests.exceptions.RequestException as e:
