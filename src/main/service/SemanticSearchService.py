@@ -25,7 +25,7 @@ class SemanticSearchService:
 
         product_descriptions = [
             f"{product['title']} - {product['type']}, {', '.join(variant['options'])}, ${variant['price']}, "
-            f"{variant['inventory_quantity']}, {product['status']}, {', '.join(product['tags'])}"
+            f"{variant['inventory_quantity']}, {product['status']}, {', '.join(product['tags'] if product['tags'] else [])}"
             for product, variant in zip(filtered_products, filtered_variants)
         ]
 

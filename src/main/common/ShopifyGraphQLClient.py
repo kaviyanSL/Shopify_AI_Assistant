@@ -3,7 +3,7 @@ import requests
 
 class ShopifyGraphQLClient:
     def __init__(self):
-        self.url = os.getenv("SHOPIFY_GRAPHQL_URL")
+        self.url = os.getenv("SHOP_GRAPHQL_URL")
         self.access_token = os.getenv("SHOP_TOKEN")
         self.headers = {
             "X-Shopify-Access-Token": self.access_token,

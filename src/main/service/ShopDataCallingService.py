@@ -1,7 +1,9 @@
 import requests
 import os
+import re
 import pandas as pd
 from dotenv import load_dotenv
+from datetime import datetime
 import logging
 from src.main.repository.ProductRepository import ProductRepository
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -97,3 +99,54 @@ class ShopDataCallingService:
         self.ProductRepository.saving_product_data(product_data_list)
         
         self.ProductRepository.saving_varient_data(variant_data_list)
+
+
+    def saving_shop_data_to_db_graphql(self, product_json):
+        data = product_json['data']['products']['edges']
+        product_data_list = []  
+        variant_data_list = []  
+
+        for product_edge in data:
+            product = product_edge['node']
+            product_data = {
+                'id': int(re.search(r'\d+$', product['id']).group()),
+                'title': product['title'],
+                'description': product['bodyHtml'],
+                'vendor': product['vendor'],
+                'handle': product['handle'],
+                'tags': product['tags'][0] if product['tags'] else None,
+                'status': product['status'],
+                'created_at': datetime.strptime(product['createdAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d %H:%M:%S'),
+                'updated_at': datetime.strptime(product['updatedAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d %H:%M:%S'),
+                'image_url': product['images']['edges'][0]['node']['src'] if product['images']['edges'] else None,
+                'type': list(product['productType'])
+            }
+            
+            product_data_list.append(product_data)
+            
+            for variant_edge in product['variants']['edges']:
+                variant = variant_edge['node']
+                variant_data = {
+                    'id': int(re.search(r'\d+$', variant['id']).group()),
+                    'product_id': int(re.search(r'\d+$', product['id']).group()),  
+                    'title': variant['title'],
+                    'price': float(variant['price']),  
+                    'inventory_quantity': variant['inventoryQuantity'],
+                    'sku': variant['sku'],
+                    'created_at': datetime.strptime(variant['createdAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d %H:%M:%S'),
+                    'updated_at': datetime.strptime(variant['updatedAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d %H:%M:%S'),
+                    'options': variant['selectedOptions'][0]['value'] if variant['selectedOptions'] else None
+                }
+                
+                variant_data_list.append(variant_data)
+
+        semattinc_search_model, product_variant_ids = self.SemanticSearchService.embeded_product((
+                                                            product_data_list, variant_data_list))
+        
+        self.ProductRepository.saving_semantic_searching_model(semattinc_search_model)
+
+        self.ProductRepository.saving_product_variant_ids(product_variant_ids)
+
+        self.ProductRepository.saving_product_data_graphql(product_data_list)
+        
+        self.ProductRepository.saving_varient_data_graphql(variant_data_list)

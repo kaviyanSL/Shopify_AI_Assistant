@@ -47,15 +47,41 @@ class ProductRepository:
     def saving_product_variant_ids(self, list_of_product_variant_ids):
         product_variant_ids = Table('product_variant_ids', self.metadata, autoload_with=self.engine)
 
+        try:
+            with self.engine.connect() as conn:
+                with conn.begin() as transaction:
+                    try:
+                        for idx, product_variant in list_of_product_variant_ids:
+                            stmt = sa.insert(product_variant_ids).values(
+                                id=idx,
+                                product_variant_ids=json.dumps(product_variant),
+                            )
+                            conn.execute(stmt)
+                            logging.debug(f"Product variant ID {idx} saved successfully!")
+                    except Exception as e:
+                        transaction.rollback()  
+                        logging.error(f"Error saving product variant ID {idx}: {e}")
+                        raise  
+        except Exception as e:
+            logging.error(f"Database connection error: {e}")
+
+
+    def saving_product_data_graphql(self, product_data_list):
+        products = Table('products', self.metadata, autoload_with=self.engine)
+
         with self.engine.connect() as conn:
             with conn.begin():
-                for idx, product_variant in list_of_product_variant_ids:
-                    stmt = sa.insert(product_variant_ids).values(
-                        id=idx,  
-                        product_variant_ids=json.dumps(product_variant),  
-                    )
-                    conn.execute(stmt)  
-                    
-                    logging.debug(f"Product variant ID {idx} saved successfully!")
+                stmt = sa.insert(products)
+                conn.execute(stmt, product_data_list)  
+                logging.debug("Products saved successfully!")
+                
 
+    def saving_varient_data_graphql(self,varients_data_list):
+        variants = Table('variants', self.metadata, autoload_with=self.engine)
+
+        with self.engine.connect() as conn:
+            with conn.begin():
+                stmt = sa.insert(variants)
+                conn.execute(stmt, varients_data_list)  
+                logging.debug("Varients saved successfully!")
 

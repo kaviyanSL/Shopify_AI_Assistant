@@ -64,7 +64,7 @@ def fetch_all_product_from_store_graphQL():
         product = shopify_client.fetch_products()
         
         ShopDataCalling = ShopDataCallingService()
-        ShopDataCalling.saving_shop_data_to_db(product)
+        ShopDataCalling.saving_shop_data_to_db_graphql(product)
           
         logging.info("response is compeleted")
         return jsonify({"message":"all data already fetched"}), 200
