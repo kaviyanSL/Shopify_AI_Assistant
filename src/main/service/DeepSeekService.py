@@ -82,14 +82,12 @@ class DeepSeekService:
             Products: {product_descriptions}  
 
             Task:  
-            - Identify and recommend products from the dataset that match the customer's request.  
+            - Identify and recommend products from the Products that match the customer's request by its product id.  
             - If no exact match exists, suggest the best alternatives within the same category.  
             - If no suitable product is found, respond with:  
-            "The product you are looking for is not listed as one of our current products."  
-            - Do **not** include any JSON response if no product matches.  
+            "The product you are looking for is not listed as one of our current products."    
             - Output **only** the final response in a short, concise format, followed by matching products in JSON format.  
             - Maintain the same language as the prompt (translate if necessary). 
-            - Remmeber if you find any match you have to return its product id as well.this is the most important part of the response 
             """,
         }
 
