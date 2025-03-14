@@ -10,18 +10,17 @@ load_dotenv()
 
 
 class DeepSeekService:
-    def __init__ (self,prompt,datasets):
-        self.prompt = prompt
-        self.datasets = datasets
-    def ai_response(self):
+    def __init__ (self):
+        pass
+    def ai_response(self,prompt,datasets):
         url = os.getenv("DEEPSEEK_URL_LOCAL")
 
-        datasets_json = json.dumps(self.datasets)
+        datasets_json = json.dumps(datasets)
 
         data = {
                 "model": "deepseek-r1:14B",
                 "prompt": f"""
-                Customer Request: {self.prompt}  
+                Customer Request: {prompt}  
                 Dataset JSON: {datasets_json}  
 
                 Task:  
@@ -70,8 +69,9 @@ class DeepSeekService:
         url = os.getenv("DEEPSEEK_URL_LOCAL")
 
         product_descriptions = [
-            f"{product['title']} - {product['type']}, {', '.join(variant['options'])}, ${variant['price']}, "
-            f"{variant['inventory_quantity']}, {product['status']}, {', '.join(product['tags'] if product['tags'] else [])}"
+            f"product id : {product[0]}"
+            f"name:{product[1]} - category: {product[-1]}, color {(variant[2])},price ${variant[3]}, "
+            f"inventory_quantity:{variant[4]},status {product[6]},gender: {(product[5])}"
             for product, variant in zip(products, variants)
         ]
 
@@ -88,7 +88,8 @@ class DeepSeekService:
             "The product you are looking for is not listed as one of our current products."  
             - Do **not** include any JSON response if no product matches.  
             - Output **only** the final response in a short, concise format, followed by matching products in JSON format.  
-            - Maintain the same language as the prompt (translate if necessary).  
+            - Maintain the same language as the prompt (translate if necessary). 
+            - Remmeber if you find any match you have to return its product id as well.this is the most important part of the response 
             """,
         }
 

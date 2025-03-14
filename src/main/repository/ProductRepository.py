@@ -91,40 +91,40 @@ class ProductRepository:
 
         with self.engine.connect() as conn:
             with conn.begin():
-                stmt = sa.select([semantic_model]).order_by(
+                stmt = sa.select(semantic_model).order_by(
                     semantic_model.c.insert_date.desc()).limit(1)
                 result = conn.execute(stmt)
-                return result.fetchone()[0]
+                return result.fetchone()[1]
             
-    def product_variant_ids_call(self,list_of_ids: List):
+    def product_variant_ids_call(self,list_of_ids):
         product_variant_ids = Table('product_variant_ids', self.metadata, autoload_with=self.engine)
 
         with self.engine.connect() as conn:
             with conn.begin():
-                stmt = sa.select([product_variant_ids]).where(
-                    product_variant_ids.c.id.in_(list_of_ids)
+                stmt = sa.select(product_variant_ids).where(
+                    product_variant_ids.c.id.in_(list_of_ids.tolist())
                 )
                 result = conn.execute(stmt)
                 return result.fetchall()
             
-    def call_products(self,id:List):
+    def call_products(self,id):
         products = Table('products', self.metadata, autoload_with=self.engine)
 
         with self.engine.connect() as conn:
             with conn.begin():
-                stmt = sa.select([products]).where(
+                stmt = sa.select(products).where(
                     products.c.id.in_(id)
                 )
                 result = conn.execute(stmt)
                 return result.fetchall()
             
-    def call_variants(self,id:List):
+    def call_variants(self,id):
         variants = Table('variants', self.metadata, autoload_with=self.engine)
 
         with self.engine.connect() as conn:
             with conn.begin():
-                stmt = sa.select([variants]).where(
-                    variants.c.product_id.in_(id)
+                stmt = sa.select(variants).where(
+                    variants.c.id.in_(id)
                 )
                 result = conn.execute(stmt)
                 return result.fetchall()

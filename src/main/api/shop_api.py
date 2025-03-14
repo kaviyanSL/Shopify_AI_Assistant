@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 import requests
 import logging
+import ast
 import os
 from src.main.service.ShopDataCallingService import ShopDataCallingService
 from src.main.service.DeepSeekService import DeepSeekService
@@ -20,8 +21,8 @@ def product_recommender():
     prompt = request_api.get('prompt')
     product_category = request_api.get('category')
     data_class = ShopDataCallingService()
-    model= DeepSeekService(prompt, data_class.calling_data(product_category)) 
-    product_category = model.ai_response()
+    model= DeepSeekService() 
+    product_category = model.ai_response(prompt, data_class.calling_data(product_category))
 
     try:
         logging.info("response is compeleted")
@@ -79,7 +80,7 @@ def fetch_all_product_from_store_graphQL():
         logging.error("Unexpected error occurred", exc_info=True)
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
     
-@blueprint.route("/api/v1/search_results_recommender_using_semantic/", methods=['POST'])
+@blueprint.route("/api/v1/search_results_recommender_using_semantic/", methods=['GET'])
 def search_results_recommender_using_semantic():
     try:
         request_api = request.get_json()
@@ -90,8 +91,8 @@ def search_results_recommender_using_semantic():
         repo = ProductRepository()
         product_variant_ids = repo.product_variant_ids_call(index)
         logging.info("product_variant_ids_call is compeleted")
-        product_ids = [i[0] for i in product_variant_ids]
-        variants_ids = [i[1] for i in product_variant_ids]
+        product_ids = [j[0] for j in [ast.literal_eval(i[1]) for i in product_variant_ids]]
+        variants_ids = [j[1] for j in [ast.literal_eval(i[1]) for i in product_variant_ids]]
         prosuct_data = repo.call_products(product_ids)
         variant_data = repo.call_variants(variants_ids)
         logging.info("call_products and call_variants is compeleted")

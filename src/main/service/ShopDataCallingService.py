@@ -119,7 +119,7 @@ class ShopDataCallingService:
                 'created_at': datetime.strptime(product['createdAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d %H:%M:%S'),
                 'updated_at': datetime.strptime(product['updatedAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%Y-%m-%d %H:%M:%S'),
                 'image_url': product['images']['edges'][0]['node']['src'] if product['images']['edges'] else None,
-                'type': list(product['productType'])
+                'type': product['productType']
             }
             
             product_data_list.append(product_data)

@@ -46,5 +46,7 @@ class SemanticSearchService:
         model = self.semantic_model_repo.call_semantic_search_model()
         k = 5
         query_embedding = np.array([self.model.encode(prompt_message)])
-        distance,index = model.search(query_embedding, k) 
-        return distance,index 
+        if model:
+            model = faiss.deserialize_index(np.frombuffer(model, dtype=np.uint8))
+            distance,index = model.search(query_embedding, k) 
+        return distance[0],index[0] 
