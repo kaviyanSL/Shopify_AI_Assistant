@@ -4,6 +4,7 @@ import logging
 import os
 from src.main.service.ShopDataCallingService import ShopDataCallingService
 from src.main.service.DeepSeekService import DeepSeekService
+from src.main.common.ShopifyGraphQLClient import ShopifyGraphQLClient
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,6 +48,31 @@ def fetch_all_product_from_store():
         return jsonify({"message":"all data already fetched"}), 200
 
 
+    except requests.exceptions.RequestException as e:
+        logging.error("Error in API request", exc_info=True)
+        return jsonify({"error": "API request failed", "details": str(e)}), 500
     except Exception as e:
-        logging.error("Error during reading message", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+        logging.error("Unexpected error occurred", exc_info=True)
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+    
+
+@blueprint.route("/api/v1/fetch_all_product_from_store_graphQL/", methods=['POST'])
+def fetch_all_product_from_store_graphQL():
+    try:
+        
+        shopify_client = ShopifyGraphQLClient()
+        product = shopify_client.fetch_products()
+        
+        ShopDataCalling = ShopDataCallingService()
+        ShopDataCalling.saving_shop_data_to_db(product)
+          
+        logging.info("response is compeleted")
+        return jsonify({"message":"all data already fetched"}), 200
+
+
+    except requests.exceptions.RequestException as e:
+        logging.error("Error in API request", exc_info=True)
+        return jsonify({"error": "API request failed", "details": str(e)}), 500
+    except Exception as e:
+        logging.error("Unexpected error occurred", exc_info=True)
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
