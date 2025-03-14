@@ -98,6 +98,7 @@ def search_results_recommender_using_semantic():
 
         deep_seek_model = DeepSeekService()
         ai_response = deep_seek_model.deep_seek_response_V2(prompt,prosuct_data,variant_data)
+        del deep_seek_model
           
         logging.info("response is compeleted")
         return jsonify({"message":f"{ai_response}"}), 200
