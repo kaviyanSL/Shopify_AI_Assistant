@@ -8,6 +8,7 @@ from src.main.service.DeepSeekService import DeepSeekService
 from src.main.common.ShopifyGraphQLClient import ShopifyGraphQLClient
 from src.main.service.SemanticSearchService import SemanticSearchService
 from src.main.repository.ProductRepository import ProductRepository
+from src.main.service.TextPreprocessingService import TextPreprocessingService
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -85,6 +86,8 @@ def search_results_recommender_using_semantic():
     try:
         request_api = request.get_json()
         prompt = request_api.get('prompt')
+        text_preprocessor = TextPreprocessingService()
+        prompt = text_preprocessor.prompt_spell_correction(prompt)
         semantinc_model = SemanticSearchService()
         distance,index = semantinc_model.semantic_search_result(prompt)
         logging.info("semantic_search_result is compeleted")
