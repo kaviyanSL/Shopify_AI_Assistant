@@ -3,14 +3,16 @@ import faiss
 import numpy as np
 from typing import Tuple, List, Dict
 import logging
-from src.main.repository.ProductRepository import ProductRepository
+from src.main.repository.SemanticSearchRepository import SemanticSearchRepository
+
+
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class SemanticSearchService:
     def __init__(self):
         self.model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
-        self.semantic_model_repo = ProductRepository()
+        self.semantic_model_repo = SemanticSearchRepository()
 
     def embeded_product(self, product_list: Tuple[List[Dict], List[Dict]]):
         products, variants = product_list

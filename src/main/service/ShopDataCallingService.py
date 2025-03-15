@@ -6,8 +6,10 @@ from dotenv import load_dotenv
 from datetime import datetime
 import logging
 from src.main.repository.ProductRepository import ProductRepository
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 from src.main.service.SemanticSearchService import SemanticSearchService
+from src.main.repository.SemanticSearchRepository import SemanticSearchRepository
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 
 load_dotenv()
@@ -16,6 +18,7 @@ class ShopDataCallingService:
     def __init__(self):
         self.ProductRepository = ProductRepository()
         self.SemanticSearchService = SemanticSearchService()
+        self.SemanticRepo = SemanticSearchRepository()
     
     def calling_data(self,product_category):
         try:
@@ -92,7 +95,7 @@ class ShopDataCallingService:
         semattinc_search_model,product_variant_ids = self.SemanticSearchService.embeded_product((
                                                             product_data_list,variant_data_list))
         
-        self.ProductRepository.saving_semantic_searching_model(semattinc_search_model)
+        self.SemanticRepo.saving_semantic_searching_model(semattinc_search_model)
 
         self.ProductRepository.saving_product_variant_ids(product_variant_ids)
 
@@ -143,7 +146,7 @@ class ShopDataCallingService:
         semattinc_search_model, product_variant_ids = self.SemanticSearchService.embeded_product((
                                                             product_data_list, variant_data_list))
         
-        self.ProductRepository.saving_semantic_searching_model(semattinc_search_model)
+        self.SemanticRepo.saving_semantic_searching_model(semattinc_search_model)
 
         self.ProductRepository.saving_product_variant_ids(product_variant_ids)
 
