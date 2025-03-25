@@ -127,6 +127,7 @@ def test():
                             ]
         model = SentimentService()
         results = model.sentiment_analaysis(list_of_commments)
+        del model
         logging.info("response is compeleted")
         return jsonify({"message":results}), 200
 

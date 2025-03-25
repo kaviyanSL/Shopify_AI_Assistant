@@ -1,4 +1,5 @@
 from transformers import pipeline
+from src.main.service.GarbageCollectorServicec import GarbageCollectorServicec
 import torch
 class SentimentService:
     def __init__(self):
@@ -10,10 +11,14 @@ class SentimentService:
         return model
     
     def sentiment_analaysis (self,list_of_comments):
-        model = self.model_pipline()
-        sentiment_results = model(list_of_comments)
-        list_results_and_reviews = []
-        for reviews,results in zip (list_of_comments,sentiment_results):
-            list_results_and_reviews.append(list((reviews,results)))
+        try:
+            model = self.model_pipline()
+            sentiment_results = model(list_of_comments)
+            list_results_and_reviews = []
+            for reviews,results in zip (list_of_comments,sentiment_results):
+                list_results_and_reviews.append(list((reviews,results)))
+        finally:
+                gc = GarbageCollectorServicec(sentiment_results)
+                gc.garbage_collecting()
         return list_results_and_reviews
 
