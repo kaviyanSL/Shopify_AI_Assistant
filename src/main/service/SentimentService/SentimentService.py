@@ -1,10 +1,12 @@
 from transformers import pipeline
+import torch
 class SentimentService:
     def __init__(self):
         self.model_five_classes = "nlptown/bert-base-multilingual-uncased-sentiment"
+        self.device = 0 if torch.cuda.is_available() else -1
 
     def model_pipline(self):
-        model = pipeline("sentiment-analysis", self.model_five_classes,device = 0)
+        model = pipeline("sentiment-analysis", self.model_five_classes, device = self.device)
         return model
     
     def sentiment_analaysis (self,list_of_comments):
