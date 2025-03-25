@@ -4,7 +4,7 @@ class SentimentService:
         self.model_five_classes = "nlptown/bert-base-multilingual-uncased-sentiment"
 
     def model_pipline(self):
-        model = pipeline("sentiment-analysis", self.model_five_classes)
+        model = pipeline("sentiment-analysis", self.model_five_classes,device = 0)
         return model
     
     def sentiment_analaysis (self,list_of_comments):
