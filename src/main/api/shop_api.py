@@ -128,7 +128,7 @@ def test():
         model = SentimentService()
         results = model.sentiment_analaysis(list_of_commments)
         logging.info("response is compeleted")
-        return jsonify({"message":f"done"}), 200
+        return jsonify({"message":results}), 200
 
 
     except requests.exceptions.RequestException as e:
