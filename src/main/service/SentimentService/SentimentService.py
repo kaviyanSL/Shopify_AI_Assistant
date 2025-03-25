@@ -12,6 +12,6 @@ class SentimentService:
         sentiment_results = model(list_of_comments)
         list_results_and_reviews = []
         for reviews,results in zip (list_of_comments,sentiment_results):
-            list_results_and_reviews.append(zip(reviews,results))
+            list_results_and_reviews.append(list((reviews,results)))
         return list_results_and_reviews
 
