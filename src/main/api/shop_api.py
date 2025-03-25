@@ -9,6 +9,7 @@ from src.main.common.ShopifyGraphQLClient import ShopifyGraphQLClient
 from src.main.service.SemanticSearchService import SemanticSearchService
 from src.main.repository.ProductRepository import ProductRepository
 from src.main.service.TextPreprocessingService import TextPreprocessingService
+from src.main.service.SentimentService.SentimentService import SentimentService
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -106,6 +107,28 @@ def search_results_recommender_using_semantic():
           
         logging.info("response is compeleted")
         return jsonify({"message":f"{ai_response}"}), 200
+
+
+    except requests.exceptions.RequestException as e:
+        logging.error("Error in API request", exc_info=True)
+        return jsonify({"error": "API request failed", "details": str(e)}), 500
+    except Exception as e:
+        logging.error("Unexpected error occurred", exc_info=True)
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+    
+
+@blueprint.route("/api/v1/test/", methods=['GET'])
+def test():
+    try:
+        list_of_commments =  [
+                            "very good product",
+                            "very bad product",
+                            "not sure if it is a good or bad product"
+                            ]
+        model = SentimentService()
+        results = model.sentiment_analaysis(list_of_commments)
+        logging.info("response is compeleted")
+        return jsonify({"message":f"done"}), 200
 
 
     except requests.exceptions.RequestException as e:
