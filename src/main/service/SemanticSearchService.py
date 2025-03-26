@@ -45,6 +45,12 @@ class SemanticSearchService:
         return index_binary, product_variant_ids
     
     def semantic_search_result(self,prompt_message:str):
+        if not isinstance(prompt_message, str):
+            prompt_message = str(prompt_message)
+
+        if not prompt_message.strip():
+            raise ValueError("The prompt_message cannot be empty or whitespace.")
+
         model = self.semantic_model_repo.call_semantic_search_model()
         k = 5
         query_embedding = np.array([self.model.encode(prompt_message)])
