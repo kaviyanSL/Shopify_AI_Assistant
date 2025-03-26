@@ -131,7 +131,85 @@ class DeepSeekService:
             return f"Request failed with status code: {response.status_code}"
         
 
+
+
+    def deep_seek_response_api(self, prompt, products, variants):
+        url = os.getenv("DEEPSEEK_API_URL")
+        api_key = os.getenv("DEEPSEEK_API_KEY")
+        
+        if not url or not api_key:
+            raise ValueError("Missing DeepSeek API URL or API Key in environment variables")
+        
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        # Create product descriptions
+        product_descriptions = [
+            f"product id: {product[0]}, "
+            f"name: {product[1]} - category: {product[-1]}, color: {variant[2]}, price: ${variant[3]}, "
+            f"inventory_quantity: {variant[4]}, status: {product[6]}, gender: {product[5]}"
+            for product, variant in zip(products, variants)
+        ]
+
+        # Construct the messages in proper chat format
+        messages = [
+            {
+                "role": "system",
+                "content": """You are a helpful shopping assistant. Your task is to help customers find products."""
+            },
+            {
+                "role": "user",
+                "content": f"""
+                Customer Request: {prompt}  
+                Products: {product_descriptions}  
+
+                Task:  
+                - Recommend products that match the customer's request based on product details.
+                - If exact match is out of stock, suggest alternatives.
+                - If no exact match, suggest best alternatives in same category/color.
+                - Only suggest active products (status: "active").
+                - If no suitable products, say: "The product you are looking for is not currently available."
+                - Output a concise response followed by matching products in JSON format.
+                - Use the same language as the customer prompt.
+                """
+            }
+        ]
+
+        payload = {
+            "model": "deepseek-chat",  # Specify the model you want to use
+            "messages": messages,
+            "max_tokens": 1000,
+            "temperature": 0.3  # Lower temperature for more factual responses
+        }
+
+        try:
+            response = requests.post(url, json=payload, headers=headers)
+            response.raise_for_status()  # Raises exception for 4XX/5XX errors
+            
+            # Parse the response
+            response_data = response.json()
+            
+            # Extract the assistant's reply
+            if "choices" in response_data and len(response_data["choices"]) > 0:
+                assistant_reply = response_data["choices"][0]["message"]["content"]
+                return assistant_reply
+            else:
+                return "Received unexpected response format from DeepSeek API"
+
+        except requests.exceptions.RequestException as e:
+            logging.error(f"API request failed: {e}")
+            return f"Error communicating with DeepSeek API: {str(e)}"
+        except json.JSONDecodeError as e:
+            logging.error(f"Failed to parse API response: {e}")
+            return "Error processing DeepSeek API response"
+        
+
     def __del__(self):
         logging.debug("DeepSeekService object deleted")
+
+
+
 
 
