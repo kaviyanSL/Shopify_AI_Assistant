@@ -84,14 +84,21 @@ class DeepSeekService:
             Task:  
             - Identify and recommend products from the product descriptions that match the customer's request based on product details (e.g., color, category), ignoring case sensitivity.
 
-            - If no exact match exists, suggest the best available alternatives within the same category and color or closest possible matches.
+            - If an exact match is found, but the inventory_quantity is 0, respond with:
+            "The product you are looking for is currently out of stock, but here are the next best matching products."
+
+            - If no exact match exists, suggest the best available alternatives within the same category and color or closest possible matches, ensuring that the alternatives are in stock and active.
 
             - If no suitable products are found, respond with:
             "The product you are looking for is not listed as one of our current products."
 
-            - Output only the final response in a concise format, followed by the matching products in JSON format.
+            - Do not suggest products that are archived or have a status other than "active."
 
-            - Ensure the response uses the same language as the original customer prompt.
+            - Output only the final response in a short, concise format, followed by the matching products in JSON format.
+
+            - Ensure the response uses the same language as the original customer prompt, and if necessary, handle translation or tone adjustment to fit the user's style.
+
+            - If there are multiple possible matches or alternatives, list the most relevant ones based on the color and availability.
             """,
         }
 
