@@ -151,24 +151,27 @@ def search_results_recommender_using_semantic_deepseek_api():
         logging.error("Unexpected error occurred", exc_info=True)
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
     
-
 @blueprint.route("/api/v1/test/", methods=['GET'])
 def test():
     try:
         ShopDataCalling = ShopDataCallingService()
         ShopDataCalling.saving_product_variants_is_using_peyman_db()
+        return jsonify({"message":"done"}), 200
 
-        # list_of_commments =  [
-        #                     "very good product",
-        #                     "very bad product",
-        #                     "not sure if it is a good or bad product"
-        #                     ]
-        # model = SentimentService()
-        # results = model.sentiment_analaysis(list_of_commments)
-        # del model
-        # logging.info("response is compeleted")
-        # return jsonify({"message":results}), 200
-        return jsonify({"message":"results"}), 200
+
+    except requests.exceptions.RequestException as e:
+        logging.error("Error in API request", exc_info=True)
+        return jsonify({"error": "API request failed", "details": str(e)}), 500
+    except Exception as e:
+        logging.error("Unexpected error occurred", exc_info=True)
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+    
+
+@blueprint.route("/api/v1/creating_semantic_model_based_on_peyman_datamodel/", methods=['GET'])
+def creating_semantic_model_based_on_peyman_datamodel():
+    try:
+        ShopDataCalling = ShopDataCallingService()
+        ShopDataCalling.saving_product_variants_is_using_peyman_db()
 
 
     except requests.exceptions.RequestException as e:
