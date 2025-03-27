@@ -118,3 +118,25 @@ class ProductRepository:
                 result = conn.execute(stmt)
                 return result.fetchall()
 
+
+    def call_products_peyman_data_model(self,id):
+        products = Table('products_synonym', self.metadata, autoload_with=self.engine)
+
+        with self.engine.connect() as conn:
+            with conn.begin():
+                stmt = sa.select(products).where(
+                    products.c.shopify_id.in_(id)
+                )
+                result = conn.execute(stmt)
+                return result.fetchall()
+            
+    def call_variants_peyman_data_model(self,id):
+        variants = Table('variants_synonym', self.metadata, autoload_with=self.engine)
+
+        with self.engine.connect() as conn:
+            with conn.begin():
+                stmt = sa.select(variants).where(
+                    variants.c.shopify_id.in_(id)
+                )
+                result = conn.execute(stmt)
+                return result.fetchall()

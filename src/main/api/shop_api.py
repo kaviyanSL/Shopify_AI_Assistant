@@ -151,12 +151,12 @@ def search_results_recommender_using_semantic_deepseek_api():
         logging.error("Unexpected error occurred", exc_info=True)
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
     
-@blueprint.route("/api/v1/test/", methods=['GET'])
-def test():
+
+@blueprint.route("/api/v1/creating_semantic_model_based_on_peyman_datamodel/", methods=['GET'])
+def creating_semantic_model_based_on_peyman_datamodel():
     try:
         ShopDataCalling = ShopDataCallingService()
         ShopDataCalling.saving_product_variants_is_using_peyman_db()
-        return jsonify({"message":"done"}), 200
 
 
     except requests.exceptions.RequestException as e:
@@ -166,12 +166,33 @@ def test():
         logging.error("Unexpected error occurred", exc_info=True)
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
     
+       
 
-@blueprint.route("/api/v1/creating_semantic_model_based_on_peyman_datamodel/", methods=['GET'])
-def creating_semantic_model_based_on_peyman_datamodel():
+@blueprint.route("/api/v1/search_results_recommender_using_semantic_peyman_db_deepseek_api/", methods=['POST'])
+def search_results_recommender_using_semantic_peyman_db_deepseek_api():
     try:
-        ShopDataCalling = ShopDataCallingService()
-        ShopDataCalling.saving_product_variants_is_using_peyman_db()
+        request_api = request.get_json()
+        prompt = request_api.get('prompt')
+        text_preprocessor = TextPreprocessingService()
+        prompt = text_preprocessor.prompt_spell_correction(prompt)
+        semantinc_model = SemanticSearchService()
+        distance,index = semantinc_model.semantic_search_result(prompt)
+        logging.info("semantic_search_result is compeleted")
+        repo = ProductRepository()
+        product_variant_ids = repo.product_variant_ids_call(index)
+        logging.info("product_variant_ids_call is compeleted")
+        product_ids = [j[0] for j in [ast.literal_eval(i[1]) for i in product_variant_ids]]
+        variants_ids = [j[1] for j in [ast.literal_eval(i[1]) for i in product_variant_ids]]
+        prosuct_data = repo.call_products_peyman_data_model(product_ids)
+        variant_data = repo.call_variants_peyman_data_model(variants_ids)
+        logging.info("call_products and call_variants is compeleted")
+
+        deep_seek_model = DeepSeekService()
+        ai_response = deep_seek_model.deep_seek_response_api_peyman_db(prompt,prosuct_data,variant_data)
+        del deep_seek_model
+          
+        logging.info("response is compeleted")
+        return jsonify({"message":f"{ai_response}"}), 200
 
 
     except requests.exceptions.RequestException as e:
