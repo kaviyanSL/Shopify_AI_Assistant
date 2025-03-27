@@ -155,16 +155,20 @@ def search_results_recommender_using_semantic_deepseek_api():
 @blueprint.route("/api/v1/test/", methods=['GET'])
 def test():
     try:
-        list_of_commments =  [
-                            "very good product",
-                            "very bad product",
-                            "not sure if it is a good or bad product"
-                            ]
-        model = SentimentService()
-        results = model.sentiment_analaysis(list_of_commments)
-        del model
-        logging.info("response is compeleted")
-        return jsonify({"message":results}), 200
+        ShopDataCalling = ShopDataCallingService()
+        ShopDataCalling.saving_product_variants_is_using_peyman_db()
+
+        # list_of_commments =  [
+        #                     "very good product",
+        #                     "very bad product",
+        #                     "not sure if it is a good or bad product"
+        #                     ]
+        # model = SentimentService()
+        # results = model.sentiment_analaysis(list_of_commments)
+        # del model
+        # logging.info("response is compeleted")
+        # return jsonify({"message":results}), 200
+        return jsonify({"message":"results"}), 200
 
 
     except requests.exceptions.RequestException as e:

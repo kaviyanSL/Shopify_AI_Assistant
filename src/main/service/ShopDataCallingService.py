@@ -8,6 +8,7 @@ import logging
 from src.main.repository.ProductRepository import ProductRepository
 from src.main.service.SemanticSearchService import SemanticSearchService
 from src.main.repository.SemanticSearchRepository import SemanticSearchRepository
+from src.main.repository.ProductsVariantsSynonim import ProductsVariantsSynonim
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
@@ -19,6 +20,7 @@ class ShopDataCallingService:
         self.ProductRepository = ProductRepository()
         self.SemanticSearchService = SemanticSearchService()
         self.SemanticRepo = SemanticSearchRepository()
+        self.ProductsVariantsSynonim = ProductsVariantsSynonim()
     
     def calling_data(self,product_category):
         try:
@@ -153,3 +155,23 @@ class ShopDataCallingService:
         self.ProductRepository.saving_product_data_graphql(product_data_list)
         
         self.ProductRepository.saving_varient_data_graphql(variant_data_list)
+
+
+    def saving_product_variants_is_using_peyman_db(self):
+        product_data_list = self.ProductsVariantsSynonim.call_products_synonym()
+        columns = ["id", "shopify_id", "merchant_id", "title", "body_html", "vendor", "product_type", "handle", "status", "created_at", "updated_at"]
+        product_data_list_dicts = [dict(zip(columns, row)) for row in product_data_list]
+        product_data_list = pd.DataFrame(product_data_list_dicts).to_json()
+        
+        variant_data_list = self.ProductsVariantsSynonim.call_variants_synonym()
+        columns = ["id", "shopify_id", "product_id", "title", "price", "sku", "inventory_quantity", "requires_shipping", "created_at", "updated_at"]
+        variant_data_list_dicts = [dict(zip(columns, row)) for row in variant_data_list]
+        variant_data_list = pd.DataFrame(variant_data_list_dicts).to_json()
+        
+
+        semattinc_search_model, product_variant_ids = self.SemanticSearchService.embeded_product_peyman_db((
+                                                            product_data_list, variant_data_list))
+        
+        self.SemanticRepo.saving_semantic_searching_model(semattinc_search_model)
+
+        self.ProductRepository.saving_product_variant_ids(product_variant_ids)

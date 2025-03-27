@@ -1,7 +1,9 @@
 from sentence_transformers import SentenceTransformer
+import json
 import faiss
 import numpy as np
 from typing import Tuple, List, Dict
+import pandas as pd
 import logging
 from src.main.repository.SemanticSearchRepository import SemanticSearchRepository
 
@@ -41,6 +43,48 @@ class SemanticSearchService:
 
         product_variant_ids = list(enumerate((product['id'], variant['id']) for product, variant in zip(filtered_products, filtered_variants)))
 
+        index_binary = faiss.serialize_index(index)
+        return index_binary, product_variant_ids
+    
+    def embeded_product_peyman_db(self, product_list: Tuple[Dict, Dict]):
+        products_data = json.loads(product_list[0]) if isinstance(product_list[0], str) else product_list[0]
+        variants_data = json.loads(product_list[1]) if isinstance(product_list[1], str) else product_list[1]
+
+        products_df = pd.DataFrame.from_dict(products_data)
+        variants_df = pd.DataFrame.from_dict(variants_data)
+
+        products = products_df.to_dict(orient="records")
+        variants = variants_df.to_dict(orient="records")
+
+        filtered_products = []
+        filtered_variants = []
+        product_ids = set(product['id'] for product in products)
+
+        for variant in variants:
+            if variant['product_id'] in product_ids:
+                filtered_variants.append(variant)
+                filtered_products.append(next(product for product in products if product['id'] == variant['product_id']))
+
+        assert len(filtered_products) == len(filtered_variants), "Filtered Products and Variants lists must have the same length"
+
+        product_descriptions = [
+            f"{product['title']} - {product['product_type']}, {variant['title']}, ${variant['price']}, "
+            f"{variant['inventory_quantity']}, {product['status']}, {product['vendor']}"
+            for product, variant in zip(filtered_products, filtered_variants)
+        ]
+
+        product_embeddings = np.array(self.model.encode(product_descriptions))
+        logging.info('Encoding is done')
+
+        index = faiss.IndexFlatL2(product_embeddings.shape[1])
+        logging.info('IndexFlatL2 is done')
+        index.add(product_embeddings)
+
+        product_variant_ids = [
+            (product['shopify_id'], variant['shopify_id'])
+            for product, variant in zip(filtered_products, filtered_variants)
+        ]
+        product_variant_ids = list(enumerate((product['shopify_id'], variant['shopify_id']) for product, variant in zip(filtered_products, filtered_variants)))
         index_binary = faiss.serialize_index(index)
         return index_binary, product_variant_ids
     
