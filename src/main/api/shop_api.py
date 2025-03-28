@@ -201,3 +201,38 @@ def search_results_recommender_using_semantic_peyman_db_deepseek_api():
     except Exception as e:
         logging.error("Unexpected error occurred", exc_info=True)
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+    
+
+@blueprint.route("/api/v1/search_results_recommender_using_semantic_peyman_db_qwen2.5/", methods=['POST'])
+def search_results_recommender_using_semantic_peyman_db_qwen2():
+    try:
+        request_api = request.get_json()
+        prompt = request_api.get('prompt')
+        text_preprocessor = TextPreprocessingService()
+        prompt = text_preprocessor.prompt_spell_correction(prompt)
+        semantinc_model = SemanticSearchService()
+        distance,index = semantinc_model.semantic_search_result(prompt)
+        logging.info("semantic_search_result is compeleted")
+        repo = ProductRepository()
+        product_variant_ids = repo.product_variant_ids_call(index)
+        logging.info("product_variant_ids_call is compeleted")
+        product_ids = [j[0] for j in [ast.literal_eval(i[1]) for i in product_variant_ids]]
+        variants_ids = [j[1] for j in [ast.literal_eval(i[1]) for i in product_variant_ids]]
+        prosuct_data = repo.call_products_peyman_data_model(product_ids)
+        variant_data = repo.call_variants_peyman_data_model(variants_ids)
+        logging.info("call_products and call_variants is compeleted")
+
+        agent = DeepSeekService()
+        ai_response = agent.qwen2_5_response(prompt,prosuct_data,variant_data)
+        del agent
+          
+        logging.info("response is compeleted")
+        return jsonify({"message":f"{ai_response}"}), 200
+
+
+    except requests.exceptions.RequestException as e:
+        logging.error("Error in API request", exc_info=True)
+        return jsonify({"error": "API request failed", "details": str(e)}), 500
+    except Exception as e:
+        logging.error("Unexpected error occurred", exc_info=True)
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
