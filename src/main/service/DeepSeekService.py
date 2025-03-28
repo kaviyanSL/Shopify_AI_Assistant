@@ -3,6 +3,8 @@ import requests
 import json
 import os
 import logging
+from contextlib import closing
+
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 from dotenv import load_dotenv
 
@@ -301,68 +303,74 @@ class DeepSeekService:
 
 
 
+
     def qwen2_5_response(self, prompt, products, variants):
-        url = os.getenv("QWEN_API_URL")  # Update this with your actual API URL
+        url = os.getenv("QWEN_API_URL")
+        if not url:
+            logging.error("QWEN_API_URL is not set")
+            return "Internal error: Missing API configuration."
 
         product_descriptions = [
-            f"product id: {product[0]}, "
-            f"name: {product[1]} - category: {product[-1]}, color: {variant[2]}, price: ${variant[3]}, "
-            f"inventory_quantity: {variant[4]}, status: {product[6]}, gender: {product[5]}"
+            (
+            f"product id: {product[1]}, "
+            f"name: {product[3]} - category: {product[6]}, price: ${variant[4]}, "
+            f"inventory_quantity: {variant[6]}, status: {product[8]}"
+            )
             for product, variant in zip(products, variants)
         ]
 
         messages = [
             {"role": "system", "content": "You are an AI assistant helping with product recommendations."},
-            {"role": "user", "content": f"""
-            Customer Request: {prompt}  
-            Products: {product_descriptions}  
+            {
+                "role": "user",
+                "content": f"""
+                Customer Request: {prompt}  
+                Products: {', '.join(product_descriptions)}  
 
-            Task:  
-            - Identify and recommend products from the product descriptions that match the customer's request based on product details (e.g., color, category), ignoring case sensitivity.
-            - If an exact match is found, but the inventory_quantity is 0, respond with:
-            "The product you are looking for is currently out of stock, but here are the next best matching products."
-            - If no exact match exists, suggest the best available alternatives within the same category and color or closest possible matches, ensuring that the alternatives are in stock and active.
-            - If no suitable products are found, respond with:
-            "The product you are looking for is not listed as one of our current products."
-            - Do not suggest products that are archived or have a status other than 'active.'
-            - Output only the final response in a short, concise format, followed by the matching products in JSON format.
-            - Ensure the response uses the same language as the original customer prompt.
-            - If there are multiple possible matches or alternatives, list the most relevant ones based on the color and availability.
-            """}
+                Task:  
+                - Identify and recommend products from the descriptions that match the customer's request.
+                - Ignore case sensitivity when matching attributes like color and category.
+                - If an exact match exists but is out of stock, suggest alternatives.
+                - Suggest best alternatives within the same category and color if no exact match is found.
+                - If no suitable products exist, respond with:
+                "The product you are looking for is not listed as one of our current products."
+                - Do not recommend archived or inactive products.
+                - Output the response concisely, followed by matching products in JSON.
+                - Maintain the response language consistent with the user's query.
+                - Prioritize most relevant matches based on color and availability.
+                """
+            }
         ]
 
-        data = {
+        payload = {
             "model": "qwen2.5-coder",
             "messages": messages,
-            "stream": True  # If streaming is supported, otherwise remove
+            "stream": True
         }
 
-        response = requests.post(url, json=data, stream=True)
+        try:
+            with closing(requests.post(url, json=payload, stream=True)) as response:
+                if response.status_code != 200:
+                    logging.error(f"Request failed with status code: {response.status_code}")
+                    return f"Request failed with status code: {response.status_code}"
 
-        if response.status_code == 200:
-            final_answer = ""
-
-            try:
+                final_answer = []
                 for line in response.iter_lines():
                     if line:
                         try:
                             response_data = json.loads(line.decode('utf-8'))
-
                             if "content" in response_data:
-                                final_answer += response_data["content"]
-
+                                final_answer.append(response_data["content"])
                         except json.JSONDecodeError as e:
                             logging.debug(f"Error decoding JSON: {e}")
 
-            finally:
-                response.close()  # Ensure the response stream is closed
+                return " ".join(final_answer).strip()
 
-            return final_answer.strip()
+        except requests.RequestException as e:
+            logging.error(f"Request error: {e}")
+            return "An error occurred while processing the request."
 
-        else:
-            return f"Request failed with status code: {response.status_code}"
 
-        
 
     def __del__(self):
         logging.debug("DeepSeekService object deleted")
