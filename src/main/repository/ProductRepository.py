@@ -1,6 +1,8 @@
 from src.main.repository.db_connector import DBConnection
 import os
 import sqlalchemy as sa
+from sqlalchemy import and_
+import re
 from sqlalchemy import create_engine, Table, MetaData
 import logging
 from typing import List
@@ -140,3 +142,59 @@ class ProductRepository:
                 )
                 result = conn.execute(stmt)
                 return result.fetchall()
+            
+    def call_distinct_product_type(self):
+        products = Table("product_synnym", self.metadata, autoload_with=self.engine)
+        query = sa.select(products.c.product_type).distinct()
+        with self.engine.connect() as conn:
+            result = conn.execute(query)
+            return result.fetchall()
+
+
+    def call_products(self, status=None, product_type=None, max_price=None):
+        products = Table("product_synnym", self.metadata, autoload_with=self.engine)
+        variants = Table("variants_synonym", self.metadata, autoload_with=self.engine)
+        filters = []
+        max_price = re.findall(r'\d+', max_price) 
+        max_price = int(max_price[0]) if max_price else None  
+        if status:
+            filters.append(products.c.status == status.lower())
+        if product_type:
+            filters.append(products.c.product_type == product_type.lower())
+        if max_price:
+            filters.append(variants.c.price <= int(max_price))
+
+        query = (
+            sa.select(products, variants)
+            .join(variants, products.c.id == variants.c.product_id)
+        )
+        
+        if filters:
+            query = query.where(and_(*filters))
+
+        with self.engine.connect() as conn:
+            result = conn.execute(query)
+            final_result = result.fetchall()
+
+        if final_result:
+            return final_result
+        
+        else:
+            filters = []
+            if status:
+                filters.append(products.c.status == status.lower())
+            if product_type:
+                filters.append(products.c.product_type == product_type.lower())
+
+            query = (
+                sa.select(products, variants)
+                .join(variants, products.c.id == variants.c.product_id)
+            )
+            
+            if filters:
+                query = query.where(and_(*filters))
+
+            with self.engine.connect() as conn:
+                result = conn.execute(query)
+                final_result = result.fetchall()
+            return final_result

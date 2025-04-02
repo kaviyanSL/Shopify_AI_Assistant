@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 import requests
 import logging
 import ast
@@ -10,6 +10,7 @@ from src.main.service.SemanticSearchService import SemanticSearchService
 from src.main.repository.ProductRepository import ProductRepository
 from src.main.service.TextPreprocessingService import TextPreprocessingService
 from src.main.service.SentimentService.SentimentService import SentimentService
+from src.main.service.agent_service.AgentAIService import AgentAIService
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -236,3 +237,122 @@ def search_results_recommender_using_semantic_peyman_db_qwen2():
     except Exception as e:
         logging.error("Unexpected error occurred", exc_info=True)
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+    
+
+@blueprint.route("/api/v1/agent_qwen_chat/", methods=['POST'])
+def agent_qwen_chat():
+    try:
+        agent = AgentAIService()
+        user_input = request.json.get('query')
+
+        if not user_input:
+            return jsonify({"error": "No query provided"}), 400
+
+        # Ensure session dictionary exists
+        if 'filters' not in session:
+            session['filters'] = {}
+
+        # Extract new filters
+        filters = agent.extract_query_filters(user_input)
+
+        # Debug: Print session before update
+        logging.info(f"Session before update: {session['filters']}")
+
+        # Merge new filters with old filters (avoids overwriting)
+        for key, value in filters.items():
+            if value:  # Only update non-null values
+                session['filters'][key] = value
+
+        session.modified = True  # Ensure Flask saves changes
+
+        # Debug: Print session after update
+        logging.info(f"Session after update: {session['filters']}")
+
+        # Check what is missing
+        missing_fields = []
+        if not session['filters'].get('product_type'):
+            missing_fields.append("product category")
+        if not session['filters'].get('price'):
+            missing_fields.append("max price")
+
+        if missing_fields:
+            return jsonify({"message": f"I still need more details. Could you provide {', '.join(missing_fields)}?"})
+
+        # Retrieve filters
+        status = session['filters'].get("status")
+        product_type = session['filters'].get("product_type")
+        max_price = session['filters'].get("price")
+
+        # Query the database
+        repo = ProductRepository()
+        products = repo.call_products(status, product_type, max_price)
+
+        if products:
+            result = [{"title": p.title, "status": p.status, "product_type": p.product_type, "price": p.price} for p in products]
+            return jsonify({"message": result}), 200
+        else:
+            return jsonify({"message": "No products found matching your criteria."})
+
+    except Exception as e:
+        logging.error("Unexpected error occurred", exc_info=True)
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
+
+@blueprint.route("/api/v1/agent_qwen_continue_chat/", methods=['POST'])
+def agent_qwen_continue_chat():
+    try:
+        agent = AgentAIService()
+        user_input = request.json.get('query')
+
+        if not user_input:
+            return jsonify({"error": "No query provided"}), 400
+
+        # Ensure session exists
+        if 'filters' not in session:
+            session['filters'] = {}
+
+        # Extract filters and update session
+        filters = agent.extract_query_filters(user_input)
+
+        # Debug: Print session before update
+        logging.info(f"Session before update: {session['filters']}")
+
+        # Merge values instead of overwriting
+        for key, value in filters.items():
+            if value:
+                session['filters'][key] = value
+
+        session.modified = True  # Persist session updates
+
+        # Debug: Print session after update
+        logging.info(f"Session after update: {session['filters']}")
+
+        # Check for missing fields
+        missing_fields = []
+        if not session['filters'].get('product_type'):
+            missing_fields.append("product category")
+        if not session['filters'].get('price'):
+            missing_fields.append("max price")
+
+        if missing_fields:
+            return jsonify({"message": f"I still need more details. Could you provide {', '.join(missing_fields)}?"})
+
+        # Retrieve stored filters
+        status = session['filters'].get("status")
+        product_type = session['filters'].get("product_type")
+        max_price = session['filters'].get("price")
+
+        # Query the database again
+        repo = ProductRepository()
+        products = repo.call_products(status, product_type, max_price)
+
+        if products:
+            result = [{"title": p.title, "status": p.status, "product_type": p.product_type, "price": p.price} for p in products]
+            return jsonify({"message": result}), 200
+        else:
+            return jsonify({"message": "No products found matching your criteria."})
+
+    except Exception as e:
+        logging.error("Unexpected error occurred", exc_info=True)
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
