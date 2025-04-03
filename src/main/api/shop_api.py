@@ -320,6 +320,9 @@ def agent_qwen_continue_chat():
         # Merge values instead of overwriting
         for key, value in filters.items():
             if value:
+                # Convert price to string if it's an integer
+                if key == "price" and isinstance(value, int):
+                    value = str(value)
                 session['filters'][key] = value
 
         session.modified = True  # Persist session updates
@@ -355,4 +358,3 @@ def agent_qwen_continue_chat():
     except Exception as e:
         logging.error("Unexpected error occurred", exc_info=True)
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
-
