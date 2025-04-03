@@ -154,9 +154,7 @@ class ProductRepository:
     def call_products(self, status=None, product_type=None, max_price=None):
         products = Table("product_synnym", self.metadata, autoload_with=self.engine)
         variants = Table("variants_synonym", self.metadata, autoload_with=self.engine)
-        filters = []
-        max_price = re.findall(r'\d+', max_price) 
-        max_price = int(max_price[0]) if max_price else None  
+        filters = [] 
         if status:
             filters.append(products.c.status == status.lower())
         if product_type:

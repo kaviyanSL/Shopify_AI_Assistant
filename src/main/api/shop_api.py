@@ -4,6 +4,7 @@ import logging
 import ast
 import shutil
 import os
+import re
 from src.main.service.ShopDataCallingService import ShopDataCallingService
 from src.main.service.DeepSeekService import DeepSeekService
 from src.main.common.ShopifyGraphQLClient import ShopifyGraphQLClient
@@ -349,6 +350,8 @@ def agent_qwen_continue_chat():
 
         # Convert max_price to a float for comparison
         try:
+            max_price = re.findall(r'\d+', max_price)
+            max_price = int(max_price[0]) if max_price else None 
             max_price = float(max_price)
         except ValueError:
             return jsonify({"error": "Invalid price format provided."}), 400
