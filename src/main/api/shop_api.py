@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, session
+import uuid  # Add UUID for generating unique session IDs
 import requests
 import logging
 import ast
@@ -250,6 +251,10 @@ def agent_qwen_chat():
         if not user_input:
             return jsonify({"error": "No query provided"}), 400
 
+        # Generate or retrieve a unique session ID
+        session_id = request.headers.get('Session-ID') or str(uuid.uuid4())
+        session['id'] = session_id
+
         # Ensure session dictionary exists
         if 'filters' not in session:
             session['filters'] = {}
@@ -291,14 +296,13 @@ def agent_qwen_chat():
 
         if products:
             result = [{"title": p.title, "status": p.status, "product_type": p.product_type, "price": p.price} for p in products]
-            return jsonify({"message": result}), 200
+            return jsonify({"message": result, "session_id": session_id}), 200
         else:
-            return jsonify({"message": "No products found matching your criteria."})
+            return jsonify({"message": "No products found matching your criteria.", "session_id": session_id})
 
     except Exception as e:
         logging.error("Unexpected error occurred", exc_info=True)
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
-
 
 
 @blueprint.route("/api/v1/agent_qwen_continue_chat/", methods=['POST'])
@@ -309,6 +313,13 @@ def agent_qwen_continue_chat():
 
         if not user_input:
             return jsonify({"error": "No query provided"}), 400
+
+        # Retrieve the unique session ID from the request header
+        session_id = request.headers.get('Session-ID')
+        if not session_id:
+            return jsonify({"error": "Session-ID header is missing"}), 400
+
+        session['id'] = session_id
 
         # Ensure session exists
         if 'filters' not in session:
@@ -341,7 +352,7 @@ def agent_qwen_continue_chat():
             missing_fields.append("max price")
 
         if missing_fields:
-            return jsonify({"message": f"I still need more details. Could you provide {', '.join(missing_fields)}?"})
+            return jsonify({"message": f"I still need more details. Could you provide {', '.join(missing_fields)}?", "session_id": session_id})
 
         # Retrieve stored filters
         status = session['filters'].get("status")
@@ -371,15 +382,9 @@ def agent_qwen_continue_chat():
         ]
 
         if filtered_products:
-            response = jsonify({"message": filtered_products}), 200
+            response = jsonify({"message": filtered_products, "session_id": session_id}), 200
         else:
-            response = jsonify({"message": "No products found matching your criteria."}), 200
-
-        # Clear the flask_session directory
-        flask_session_path = os.path.join(os.getcwd(), 'flask_session')
-        if os.path.exists(flask_session_path):
-            shutil.rmtree(flask_session_path)
-            logging.info("Flask session directory cleared.")
+            response = jsonify({"message": "No products found matching your criteria.", "session_id": session_id}), 200
 
         return response
 
