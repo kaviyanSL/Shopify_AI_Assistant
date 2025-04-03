@@ -14,6 +14,11 @@ from src.main.repository.ProductRepository import ProductRepository
 from src.main.service.TextPreprocessingService import TextPreprocessingService
 from src.main.service.SentimentService.SentimentService import SentimentService
 from src.main.service.agent_service.AgentAIService import AgentAIService
+
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferMemory
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -321,6 +326,124 @@ def agent_qwen_chat():
             response = jsonify({"message": filtered_products, "session_id": session_id}), 200
         else:
             response = jsonify({"message": "No products found matching your criteria.", "session_id": session_id}), 200
+
+        return response
+
+    except Exception as e:
+        logging.error("Unexpected error occurred", exc_info=True)
+        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+    
+
+
+@blueprint.route("/api/v1/agent_openai/", methods=['POST'])
+def agent_openai():
+    try:
+        # Initialize LangChain components
+        memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+        llm = ChatOpenAI(model="gpt-4", temperature=0.7)  # Replace with your preferred model
+        prompt_template = PromptTemplate(
+            input_variables=["query", "filters", "chat_history"],
+            template="""
+            You are an intelligent shopping assistant. The user has provided the following query: "{query}".
+            Current filters: {filters}.
+            Chat history: {chat_history}.
+            Respond to the user's query and suggest products based on the filters.
+            """
+        )
+        conversation = ConversationChain(llm=llm, memory=memory, prompt=prompt_template)
+
+        # Get user input
+        user_input = request.json.get('query')
+        if not user_input:
+            return jsonify({"error": "No query provided"}), 400
+
+        # Use Flask's session to persist session ID
+        if 'id' not in session:
+            session['id'] = str(uuid.uuid4())
+
+        session_id = session['id']
+
+        # Ensure session dictionary exists
+        if 'filters' not in session:
+            session['filters'] = {}
+
+        # Extract filters and update session
+        agent = AgentAIService()
+        filters = agent.extract_query_filters(user_input)
+
+        # Debug: Print session before update
+        logging.info(f"Session before update: {session['filters']}")
+
+        # Merge values instead of overwriting
+        for key, value in filters.items():
+            if value:
+                # Convert price to string if it's an integer
+                if key == "price" and isinstance(value, int):
+                    value = str(value)
+                session['filters'][key] = value
+
+        session.modified = True  # Persist session updates
+
+        # Debug: Print session after update
+        logging.info(f"Session after update: {session['filters']}")
+
+        # Check for missing fields
+        missing_fields = []
+        if not session['filters'].get('product_type'):
+            missing_fields.append("product category")
+        if not session['filters'].get('price'):
+            missing_fields.append("max price")
+
+        if missing_fields:
+            return jsonify({"message": f"I still need more details. Could you provide {', '.join(missing_fields)}?", "session_id": session_id})
+
+        # Retrieve stored filters
+        status = session['filters'].get("status")
+        product_type = session['filters'].get("product_type")
+        max_price = session['filters'].get("price")
+
+        # Convert max_price to a float for comparison
+        try:
+            max_price = re.findall(r'\d+', max_price)
+            max_price = int(max_price[0]) if max_price else None 
+            max_price = float(max_price)
+        except ValueError:
+            return jsonify({"error": "Invalid price format provided."}), 400
+
+        # Calculate price range (±25%)
+        min_price = max_price * 0.75
+        max_price = max_price * 1.25
+
+        # Query the database
+        repo = ProductRepository()
+        products = repo.call_products(status, product_type, max_price)
+
+        # Filter products within the price range
+        filtered_products = [
+            {"title": p.title, "status": p.status, "product_type": p.product_type, "price": p.price}
+            for p in products if min_price <= p.price <= max_price
+        ]
+
+        # Use LangChain to generate a response
+        chat_history = memory.load_memory_variables({})["chat_history"]
+        langchain_response = conversation.run({
+            "query": user_input,
+            "filters": session['filters'],
+            "chat_history": chat_history
+        })
+
+        if filtered_products:
+            response = jsonify({
+                "message": langchain_response,
+                "products": filtered_products,
+                "session_id": session_id
+            }), 200
+        else:
+            response = jsonify({
+                "message": langchain_response,
+                "products": "No products found matching your criteria.",
+                "session_id": session_id
+            }), 200
 
         return response
 
