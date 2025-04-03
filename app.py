@@ -1,11 +1,12 @@
 import os
-from flask import Flask
+from flask import Flask, request, jsonify, session
 from flask_session import Session
-from src.main.api.shop_api import blueprint
-import redis
 from dotenv import load_dotenv
+import redis
+from src.main.api.shop_api import blueprint
+from src.main.repository.ProductRepository import ProductRepository
 
-load_dotenv()
+load_dotenv()  # Load environment variables from .env
 
 def create_app():
     app = Flask(__name__)
@@ -29,6 +30,25 @@ def create_app():
     
     # Register your API blueprint
     app.register_blueprint(blueprint)
+
+    # Define the agent_qwen_chat route
+    @app.route('/api/v1/agent_qwen_chat/', methods=['POST'])
+    def agent_qwen_chat():
+        query = request.json.get("query")
+        
+        # Check if session_id exists, otherwise create a new one
+        if 'session_id' not in session:
+            session['session_id'] = "unique-session-id"  # Generate a unique session ID
+            return jsonify({
+                "message": "I still need more details. Could you provide product category, max price?",
+                "session_id": session['session_id']  # Include session_id in the response
+            }), 200
+        else:
+            # Handle subsequent queries
+            return jsonify({
+                "message": f"Processing your query: {query}",
+                "session_id": session['session_id']  # Return the existing session_id
+            }), 200
 
     return app
 

@@ -251,77 +251,13 @@ def agent_qwen_chat():
         if not user_input:
             return jsonify({"error": "No query provided"}), 400
 
-        # Generate or retrieve a unique session ID
-        session_id = request.headers.get('Session-ID') or str(uuid.uuid4())
-        session['id'] = session_id
+        # Use Flask's session to persist session ID
+        if 'id' not in session:
+            session['id'] = str(uuid.uuid4())
+
+        session_id = session['id']
 
         # Ensure session dictionary exists
-        if 'filters' not in session:
-            session['filters'] = {}
-
-        # Extract new filters
-        filters = agent.extract_query_filters(user_input)
-
-        # Debug: Print session before update
-        logging.info(f"Session before update: {session['filters']}")
-
-        # Merge new filters with old filters (avoids overwriting)
-        for key, value in filters.items():
-            if value:  # Only update non-null values
-                session['filters'][key] = value
-
-        session.modified = True  # Ensure Flask saves changes
-
-        # Debug: Print session after update
-        logging.info(f"Session after update: {session['filters']}")
-
-        # Check what is missing
-        missing_fields = []
-        if not session['filters'].get('product_type'):
-            missing_fields.append("product category")
-        if not session['filters'].get('price'):
-            missing_fields.append("max price")
-
-        if missing_fields:
-            return jsonify({"message": f"I still need more details. Could you provide {', '.join(missing_fields)}?"})
-
-        # Retrieve filters
-        status = session['filters'].get("status")
-        product_type = session['filters'].get("product_type")
-        max_price = session['filters'].get("price")
-
-        # Query the database
-        repo = ProductRepository()
-        products = repo.call_products(status, product_type, max_price)
-
-        if products:
-            result = [{"title": p.title, "status": p.status, "product_type": p.product_type, "price": p.price} for p in products]
-            return jsonify({"message": result, "session_id": session_id}), 200
-        else:
-            return jsonify({"message": "No products found matching your criteria.", "session_id": session_id})
-
-    except Exception as e:
-        logging.error("Unexpected error occurred", exc_info=True)
-        return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
-
-
-@blueprint.route("/api/v1/agent_qwen_continue_chat/", methods=['POST'])
-def agent_qwen_continue_chat():
-    try:
-        agent = AgentAIService()
-        user_input = request.json.get('query')
-
-        if not user_input:
-            return jsonify({"error": "No query provided"}), 400
-
-        # Retrieve the unique session ID from the request header
-        session_id = request.headers.get('Session-ID')
-        if not session_id:
-            return jsonify({"error": "Session-ID header is missing"}), 400
-
-        session['id'] = session_id
-
-        # Ensure session exists
         if 'filters' not in session:
             session['filters'] = {}
 
@@ -371,7 +307,7 @@ def agent_qwen_continue_chat():
         min_price = max_price * 0.75
         max_price = max_price * 1.25
 
-        # Query the database again
+        # Query the database
         repo = ProductRepository()
         products = repo.call_products(status, product_type, max_price)
 
