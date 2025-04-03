@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, session
 import requests
 import logging
 import ast
+import shutil
 import os
 from src.main.service.ShopDataCallingService import ShopDataCallingService
 from src.main.service.DeepSeekService import DeepSeekService
@@ -298,6 +299,7 @@ def agent_qwen_chat():
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
 
 
+
 @blueprint.route("/api/v1/agent_qwen_continue_chat/", methods=['POST'])
 def agent_qwen_continue_chat():
     try:
@@ -345,15 +347,38 @@ def agent_qwen_continue_chat():
         product_type = session['filters'].get("product_type")
         max_price = session['filters'].get("price")
 
+        # Convert max_price to a float for comparison
+        try:
+            max_price = float(max_price)
+        except ValueError:
+            return jsonify({"error": "Invalid price format provided."}), 400
+
+        # Calculate price range (±25%)
+        min_price = max_price * 0.75
+        max_price = max_price * 1.25
+
         # Query the database again
         repo = ProductRepository()
         products = repo.call_products(status, product_type, max_price)
 
-        if products:
-            result = [{"title": p.title, "status": p.status, "product_type": p.product_type, "price": p.price} for p in products]
-            return jsonify({"message": result}), 200
+        # Filter products within the price range
+        filtered_products = [
+            {"title": p.title, "status": p.status, "product_type": p.product_type, "price": p.price}
+            for p in products if min_price <= p.price <= max_price
+        ]
+
+        if filtered_products:
+            response = jsonify({"message": filtered_products}), 200
         else:
-            return jsonify({"message": "No products found matching your criteria."})
+            response = jsonify({"message": "No products found matching your criteria."}), 200
+
+        # Clear the flask_session directory
+        flask_session_path = os.path.join(os.getcwd(), 'flask_session')
+        if os.path.exists(flask_session_path):
+            shutil.rmtree(flask_session_path)
+            logging.info("Flask session directory cleared.")
+
+        return response
 
     except Exception as e:
         logging.error("Unexpected error occurred", exc_info=True)
