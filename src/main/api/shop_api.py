@@ -14,11 +14,12 @@ from src.main.repository.ProductRepository import ProductRepository
 from src.main.service.TextPreprocessingService import TextPreprocessingService
 from src.main.service.SentimentService.SentimentService import SentimentService
 from src.main.service.agent_service.AgentAIService import AgentAIService
+from src.main.service.agent_service.LangChainAgentService import LangChainAgentService
 
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
+from langchain_community.chat_models import ChatOpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -450,3 +451,21 @@ def agent_openai():
     except Exception as e:
         logging.error("Unexpected error occurred", exc_info=True)
         return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+    
+@blueprint.route("/api/v1/dynamic_agent_chat", methods=["POST"])
+def dynamic_agent_chat():
+    try:
+        data = request.get_json()
+        user_prompt = data.get("query", "")
+        if not user_prompt:
+            return jsonify({"error": "Missing query"}), 400
+
+        agent = LangChainAgentService()
+        response = agent.run(user_prompt)
+        final_result = agent.process_agent_response(response)
+        return jsonify({"response": final_result})
+
+    except Exception as e:
+        import logging
+        logging.exception("Error in agent_chat endpoint")
+        return jsonify({"error": str(e)}), 500
