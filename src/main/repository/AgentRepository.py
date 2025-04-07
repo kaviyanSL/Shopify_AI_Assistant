@@ -32,7 +32,7 @@ class ProductRepository:
 
     def call_distinct_product_type(self):
         try:
-            products = Table("product_synonym", self.metadata, autoload=True, autoload_with=self.engine)
+            products = Table("product_synonym", self.metadata, autoload_with=self.engine)
             query = sa.select(products.c.product_type).distinct()
             with self.engine.connect() as conn:
                 result = conn.execute(query)
