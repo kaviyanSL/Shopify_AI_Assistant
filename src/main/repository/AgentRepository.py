@@ -95,7 +95,7 @@ class ProductRepository:
                 if not rows:
                     logging.warning("No matches found. Fetching random fallback products.")
                     fallback_query = sa.select(
-                        products.c.id.label("shopify_id"),
+                        products.c.shopify_id.label("shopify_id"),
                         products.c.title,
                         products.c.product_type,
                         variants.c.price,
