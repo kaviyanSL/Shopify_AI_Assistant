@@ -68,6 +68,23 @@ class LangChainAgentService:
             agent_output["action_input"] += "\nNo exact matches found. Suggesting the closest products."
             fallback_products = find_products_flexible(action_input)  # Pass the corrected query as input
 
+            # Extract query keywords
+            query_keywords = re.findall(r'\b\w+\b', action_input.lower())
+
+            # Score fallback products based on relevance
+            def calculate_relevance_score(product):
+                title = product["title"].lower()
+                product_type = product["product_type"].lower()
+                score = sum(keyword in title or keyword in product_type for keyword in query_keywords)
+                return score
+
+            # Filter and sort fallback products by relevance score
+            fallback_products = [
+                product for product in fallback_products
+                if any(keyword in product["title"].lower() or keyword in product["product_type"].lower() for keyword in query_keywords)
+            ]
+            fallback_products.sort(key=calculate_relevance_score, reverse=True)
+
             # Ensure fallback_products are dictionaries
             fallback_products = [
                 {
