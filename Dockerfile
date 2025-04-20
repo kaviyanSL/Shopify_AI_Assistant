@@ -20,4 +20,4 @@ EXPOSE 8000
 ENV PYTHONUNBUFFERED=1
 
 # Command to run the application
-CMD ["python", "src/main/app.py"]
+CMD ["gunicorn", "wsgi:app", "-c", "gunicorn_conf.py"]
