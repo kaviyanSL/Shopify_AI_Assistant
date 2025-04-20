@@ -47,7 +47,7 @@ async def agent_calling_service(user_input: str, session_id: str = None):
         final_output = {}
         async for event in graph.astream({"messages": history}):
             for value in event.values():
-                if "final_result" in value and value["final_result"]:
+                if "final_result" in value:
                     final_output = value["final_result"]
                     history += value["messages"]
 
